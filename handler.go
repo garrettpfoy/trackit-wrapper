@@ -20,6 +20,18 @@ var (
 	TRACKIT_PASSWORD = os.Getenv("TRACKIT_PASSWORD")
 )
 
+// Struct used to format the body for a CREATE/POST
+// endpoint in TrackIT's API
+type MutateWorkOrder struct {
+	RequestorName string `json:"RequestorName"`
+	CallbackNumber string `json:"RequestorPhoneNumber"`
+	Summary string `json:"Summary"`
+	Priority int `json:"Priority"`
+	Type string `json:"Type"`
+	Subtype string `json:"SubType"`
+	Category string `json:"Category"`
+}
+
 //
 // Struct to unmarshal the JSON response from the
 // TrackIT API work order request / response
@@ -264,12 +276,63 @@ func getWorkOrder(id int) WorkOrder {
 		return nil
 	}
 
-	if !WorkOrderResponse.Success {
+	if !workOrderResponse.Success {
 		fmt.Println("Retrieval request was unsuccessful")
 		return nil
 	}
 
-	return WorkOrderResponse.WorkOrder
+	return workOrderResponse.WorkOrder
+}
+
+// Utility function to handle the API request to Track-IT! to create
+// a new work order
+func createWorkOrder(requestor string, callback string, summary string, priority string, orderType string, orderSubtype string) (WorkOrder) {
+	url := fmt.Sprintf("http://%s/TrackitWebAPI/api/workorder/Create")
+
+	mutateData := MutateWorkOrder {
+		RequestorName: requestor,
+		CallbackNumber: callback,
+		Summary: summary,
+		Priority: priority,
+		Type: orderType,
+		Subtype: orderSubtype,
+		Category: "Request",
+	}
+
+	jsonMutateData, err := json.Marshal(mutateData)
+	if err != nil {
+		fmt.Println("Failed to marshal parameters into a proper JSON request body. ", err)
+		return nil
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonMutateData))
+	if err != nil {
+		fmt.Println("Failed to create work order post request: ", err)
+		return nil
+	}
+
+	req.Header.Set("TrackItAPIKey", getAccessToken())
+
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Request to create work order failed with error: ", err)
+		return nil
+	}
+
+	var workOrderResponse WorkOrderResponse
+
+	err = json.NewDecoder(resp.Body).Decode(&workOrderResponse)
+	if err != nil {
+		fmt.println("Reading the JSON response from Track-IT failed with error: ", err)
+		return nil
+	}
+
+	if !workOrderResponse.Success {
+		fmt.Println("Creation request was unsuccessful")
+		return nil
+	}
+
+	return workOrderResponse.WorkOrder
 }
 
 // Recieve a given request and format a response based
