@@ -195,7 +195,8 @@ func getQueryParameter(r *http.Request, parameter string) string {
 	return queryParameter
 }
 
-
+// Utility function to handle the API request to Track-IT! needed to generate
+// an access token for future requests
 func getAccessToken() string {
 	url := fmt.Sprintf("http://%s/TrackitWebAPI/api/login?username=%s&pwd=%s", TRACKIT_API_URL, TRACKIT_USERNAME, TRACKIT_PASSWORD)
 
@@ -234,6 +235,8 @@ func getAccessToken() string {
 	return tokenResponse.ApiKey
 }
 
+// Utility function to handle the API request to Track-IT! and return
+// the resultant Struct
 func getWorkOrder(id int) WorkOrder {
 	url := fmt.Sprintf("http://%s/TrackitWebAPI/api/workorder/Get/%s", TRACKIT_API_URL, id)
 
