@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"bytes"
+	"strconv"
 )
 
 // Global variables to be imported before script runtime
@@ -50,6 +52,10 @@ type WorkOrderNote struct {
     MessageType       string `json:"MessageType"`
 }
 
+//
+// Struct to hold the WorkOrder
+// data returned from the API
+//
 type WorkOrder struct {
     AssetName               string            `json:"AssetName"`
     AssignedTechnician      string            `json:"AssignedTechnician"`
@@ -112,6 +118,10 @@ type WorkOrder struct {
     Notes                   map[string]WorkOrderNote   `json:"Notes"`
 }
 
+//
+// Struct to hold the WorkOrder information returned
+// from a TrackIT API response body
+//
 type WorkOrderResponse struct {
     Success string `json:"success"`
     WorkOrder    WorkOrder   `json:"data"`
@@ -130,10 +140,10 @@ type TokenResponse struct {
 // Pass it the request, it'll utilize helper functions
 // to determine if the IP is whitelisted, and if the
 // authorization token is valid.
-func authenticate(r *http.Request) bool {
+func authenticate(request *http.Request) bool {
 	// Get the IP address of the request
-	ip := getRequestIP(r)
-	token := getTokenFromRequest(r)
+	ip := getRequestIP(request)
+	token := getTokenFromRequest(request)
 
 	// Check if the IP is whitelisted
 	if WHITELISTED_IP != ip {
@@ -155,9 +165,9 @@ func authenticate(r *http.Request) bool {
 // the IP that the request is coming from.
 //
 // If no IP is found, an empty string is returned ("")
-func getRequestIP(r *http.Request) string {
+func getRequestIP(request *http.Request) string {
 	// Get the IP address from the RemoteAddr field
-	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	ip, _, err := net.SplitHostPort(request.RemoteAddr)
 	if err != nil {
 		// Handle error if unable to parse the IP address
 		return ""
@@ -173,9 +183,9 @@ func getRequestIP(r *http.Request) string {
 //
 // If no token or authorization header is found, the returned string
 // will be empty ("")
-func getTokenFromRequest(r *http.Request) string {
+func getTokenFromRequest(request *http.Request) string {
 	// Get the Authorization header value
-	authHeader := r.Header.Get("Authorization")
+	authHeader := request.Header.Get("Authorization")
 
 	// Check if the Authorization header is present
 	if authHeader == "" {
@@ -200,9 +210,9 @@ func getTokenFromRequest(r *http.Request) string {
 }
 
 
-func getQueryParameter(r *http.Request, parameter string) string {
+func getQueryParameter(request *http.Request, parameter string) string {
 	// Get the query parameter from the request
-	queryParameter := r.URL.Query().Get(parameter)
+	queryParameter := request.URL.Query().Get(parameter)
 
 	return queryParameter
 }
@@ -217,6 +227,7 @@ func getAccessToken() string {
 		fmt.Println("Failed to create access token request:", err)
 		return ""
 	}
+	
 	client := http.DefaultClient
 	resp, err := client.Do(req)
 	if err != nil {
@@ -250,35 +261,36 @@ func getAccessToken() string {
 // Utility function to handle the API request to Track-IT! and return
 // the resultant Struct
 func getWorkOrder(id int) WorkOrder {
+	var workOrderResponse WorkOrderResponse
+
 	url := fmt.Sprintf("http://%s/TrackitWebAPI/api/workorder/Get/%s", TRACKIT_API_URL, id)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Println("Failed to create work order get request: ", err)
-		return nil
+		return workOrderResponse.WorkOrder
 	}
 
 	req.Header.Set("TrackItAPIKey", getAccessToken())
 
+	client := http.DefaultClient
 	resp, err := client.Do(req)
 
 	if resp.StatusCode != http.StatusOK {
 		fmt.Println("Request returned non-OK status: ", resp.Status)
-		return nil
+		return workOrderResponse.WorkOrder
 	}
-
-	var workOrderResponse WorkOrderResponse
 
 	err = json.NewDecoder(resp.Body).Decode(&workOrderResponse)
 
 	if err != nil {
 		fmt.Println("Failed to parse response JSON: ", err)
-		return nil
+		return workOrderResponse.WorkOrder
 	}
 
-	if !workOrderResponse.Success {
+	if workOrderResponse.Success == "false" {
 		fmt.Println("Retrieval request was unsuccessful")
-		return nil
+		return workOrderResponse.WorkOrder
 	}
 
 	return workOrderResponse.WorkOrder
@@ -286,7 +298,9 @@ func getWorkOrder(id int) WorkOrder {
 
 // Utility function to handle the API request to Track-IT! to create
 // a new work order
-func createWorkOrder(requestor string, callback string, summary string, priority string, orderType string, orderSubtype string) (WorkOrder) {
+func createWorkOrder(requestor string, callback string, summary string, priority int, orderType string, orderSubtype string) (WorkOrder) {
+	var workOrderResponse WorkOrderResponse
+
 	url := fmt.Sprintf("http://%s/TrackitWebAPI/api/workorder/Create")
 
 	mutateData := MutateWorkOrder {
@@ -302,34 +316,33 @@ func createWorkOrder(requestor string, callback string, summary string, priority
 	jsonMutateData, err := json.Marshal(mutateData)
 	if err != nil {
 		fmt.Println("Failed to marshal parameters into a proper JSON request body. ", err)
-		return nil
+		return workOrderResponse.WorkOrder
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonMutateData))
 	if err != nil {
 		fmt.Println("Failed to create work order post request: ", err)
-		return nil
+		return workOrderResponse.WorkOrder
 	}
 
 	req.Header.Set("TrackItAPIKey", getAccessToken())
 
+	client := http.DefaultClient
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("Request to create work order failed with error: ", err)
-		return nil
+		return workOrderResponse.WorkOrder
 	}
-
-	var workOrderResponse WorkOrderResponse
 
 	err = json.NewDecoder(resp.Body).Decode(&workOrderResponse)
 	if err != nil {
-		fmt.println("Reading the JSON response from Track-IT failed with error: ", err)
-		return nil
+		fmt.Println("Reading the JSON response from Track-IT failed with error: ", err)
+		return workOrderResponse.WorkOrder
 	}
 
-	if !workOrderResponse.Success {
+	if workOrderResponse.Success == "false" {
 		fmt.Println("Creation request was unsuccessful")
-		return nil
+		return workOrderResponse.WorkOrder
 	}
 
 	return workOrderResponse.WorkOrder
@@ -355,7 +368,13 @@ func returnWorkOrder(w http.ResponseWriter, r *http.Request) {
 	if authenticate(r) {
 		// Request is authenticated
 		// Attempt to write struct to ResponseWriter
-		err := json.NewEncoder(w).Encode(getWorkOrder(getQueryParameter(r, "id")))
+		id, err := strconv.Atoi(getQueryParameter(r, "id"))
+
+		if(err != nil) {
+			http.Error(w, "The passed ID is not an integer!", http.StatusInternalServerError)
+		}
+
+		err = json.NewEncoder(w).Encode(getWorkOrder(id))
 		if err != nil {
 			//Raise generic error
 			http.Error(w, "The passed ID failed when attempting to retrieve the associated work order.", http.StatusInternalServerError)
@@ -376,7 +395,6 @@ func main() {
 	if val, ok := os.LookupEnv("FUNCTIONS_CUSTOMHANDLER_PORT"); ok {
 		listenAddr = ":" + val
 	}
-	log.Printf("Employee Name: %s", getEmployeeRecord(getConnection(), "0").Name)
 
 	http.HandleFunc("/api/bouncer", authTester)
 	http.HandleFunc("/api/getWorkOrder", returnWorkOrder)
