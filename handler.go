@@ -132,8 +132,10 @@ type WorkOrderResponse struct {
 // TrackIT API access token request
 //
 type TokenResponse struct {
-	Success bool   `json:"success"`
-	ApiKey  string `json:"apikey"`
+	Success string `json:"success"`
+	Data    struct {
+		APIKey string `json:"apiKey"`
+	} `json:"data"`
 }
 
 // Helper function to handle authentication
@@ -250,12 +252,12 @@ func getAccessToken() string {
 		return ""
 	}
 
-	if !tokenResponse.Success {
+	if tokenResponse.Success != "true" {
 		fmt.Println("Request was not successful")
 		return ""
 	}
 
-	return tokenResponse.ApiKey
+	return tokenResponse.Data.APIKey
 }
 
 // Utility function to handle the API request to Track-IT! and return
@@ -263,13 +265,17 @@ func getAccessToken() string {
 func getWorkOrder(id int) WorkOrder {
 	var workOrderResponse WorkOrderResponse
 
-	url := fmt.Sprintf("http://%s/TrackitWebAPI/api/workorder/Get/%s", TRACKIT_API_URL, id)
+	url := fmt.Sprintf("http://%s/TrackitWebAPI/api/workorder/Get/%s", TRACKIT_API_URL, strconv.Itoa(id))
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Println("Failed to create work order get request: ", err)
 		return workOrderResponse.WorkOrder
 	}
+
+	accessToken := getAccessToken()
+
+	fmt.Println("Retrieved Access Token: " + accessToken)
 
 	req.Header.Set("TrackItAPIKey", getAccessToken())
 
@@ -372,16 +378,21 @@ func returnWorkOrder(w http.ResponseWriter, r *http.Request) {
 
 		if(err != nil) {
 			http.Error(w, "The passed ID is not an integer!", http.StatusInternalServerError)
+			return
 		}
 
-		err = json.NewEncoder(w).Encode(getWorkOrder(id))
+		//Properly formatted request
+		w.Header().Set("Content-Type", "application/json")
+
+		jsonResponse, err := json.Marshal(getWorkOrder(id))
 		if err != nil {
 			//Raise generic error
 			http.Error(w, "The passed ID failed when attempting to retrieve the associated work order.", http.StatusInternalServerError)
-
 		}
-		w.WriteHeader(http.StatusOK)
-		 
+
+		w.Write(jsonResponse)
+
+		return
 	} else {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
