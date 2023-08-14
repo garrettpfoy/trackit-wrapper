@@ -32,8 +32,6 @@ RUN GO111MODULE=on go get -v \
 
 RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.43.0
 
-RUN echo 'export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1' >> /root/.bashrc
-
 WORKDIR /wrapper
 
 COPY . .
