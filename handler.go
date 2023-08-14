@@ -390,7 +390,10 @@ func returnWorkOrder(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "The passed ID failed when attempting to retrieve the associated work order.", http.StatusInternalServerError)
 		}
 
-		w.Write(jsonResponse)
+		err = w.Write(jsonResponse)
+		if err != nil {
+			http.Error(w, "Error writing the WorkOrder response payload!", http.StatusInternalServerError)
+		}
 
 		return
 	} else {
