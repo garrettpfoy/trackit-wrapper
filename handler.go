@@ -407,9 +407,14 @@ func main() {
 		listenAddr = ":" + val
 	}
 
+	server := &http.Server {
+		Addr: listenAddr,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
 	http.HandleFunc("/api/bouncer", authTester)
 	http.HandleFunc("/api/getWorkOrder", returnWorkOrder)
 	
 	log.Printf("About to listen on %s. Go to https://localhost%s/", listenAddr, listenAddr)
-	log.Fatal(http.ListenAndServe(listenAddr, nil))
+	log.Fatal(server.ListenAndServe())
 }
