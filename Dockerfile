@@ -1,6 +1,10 @@
 FROM golang:1.17.6-bullseye
 
+ARG DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+
 ARG DEBIAN_VERSION=11
+
+ARG FUNCTIONS_CUSTOMHANDLER_PORT=3005
 
 RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.asc.gpg \
     && mv microsoft.asc.gpg /etc/apt/trusted.gpg.d/ \
@@ -10,6 +14,8 @@ RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor 
     && chown root:root /etc/apt/sources.list.d/microsoft-prod.list
 
 RUN apt-get update && apt-get -y install --no-install-recommends azure-functions-core-tools-3
+
+RUN apt-get update && apt-get -y install --no-install-recommends libicu-dev
 
 RUN GO111MODULE=on go get -v \
     golang.org/x/tools/gopls@latest \
@@ -28,6 +34,10 @@ RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/i
 
 RUN echo 'export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1' >> /root/.bashrc
 
+WORKDIR /wrapper
+
+COPY . .
+
 RUN go build handler.go
 
-CMD ["func", "start", "-p", "3005"]
+CMD ["func", "start", "--port", "3005"]
