@@ -308,7 +308,7 @@ func getWorkOrder(id int) WorkOrder {
 func createWorkOrder(requestor string, callback string, summary string, priority int, orderType string, orderSubtype string) (WorkOrder) {
 	var workOrderResponse WorkOrderResponse
 
-	url := fmt.Sprintf("http://%s/TrackitWebAPI/api/workorder/Create")
+	url := fmt.Sprintf("http://%s/TrackitWebAPI/api/workorder/Create", TRACKIT_API_URL)
 
 	mutateData := MutateWorkOrder {
 		RequestorName: requestor,
