@@ -406,11 +406,7 @@ func returnWorkOrder(w http.ResponseWriter, r *http.Request) {
 
 
 func main() {
-	listenAddr := ":8080"
-	if val, ok := os.LookupEnv("FUNCTIONS_CUSTOMHANDLER_PORT"); ok {
-		log.Printf("Found custom functions port (%s), using that value instead of default (8080)...", val)
-		listenAddr = ":" + val
-	}
+	listenAddr := ":3006"
 
 	server := &http.Server {
 		Addr: listenAddr,
