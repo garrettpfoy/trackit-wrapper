@@ -27,6 +27,7 @@ var (
 // Struct used to format the body for a CREATE/POST
 // endpoint in TrackIT's API
 type MutateWorkOrder struct {
+	StatusName: string `json:"StatusName"`
 	RequestorName string `json:"RequestorName"`
 	CallbackNumber string `json:"RequestorPhoneNumber"`
 	Summary string `json:"Summary"`
@@ -127,19 +128,6 @@ type WorkOrder struct {
 type WorkOrderResponse struct {
     Success string `json:"success"`
     WorkOrder    WorkOrder   `json:"data"`
-}
-
-//
-// Struct to hold the expected CreateWorkOrder payload
-// used to request a new work order to be created
-//
-type CreateWorkOrderPayload struct {
-	Requestor   string `json:"requestor"`
-	Callback    string `json:"callback"`
-	Summary     string `json:"summary"`
-	Priority    int `json:"priority"`
-	OrderType   string `json:"orderType"`
-	SubOrderType string `json:"subOrderType"`
 }
 
 // 
@@ -321,12 +309,13 @@ func getWorkOrder(id int) WorkOrder {
 
 // Utility function to handle the API request to Track-IT! to create
 // a new work order
-func createWorkOrder(requestor string, callback string, summary string, priority int, orderType string, orderSubtype string) (WorkOrder) {
+func createWorkOrder(statusName string, requestor string, callback string, summary string, priority int, orderType string, orderSubtype string) (WorkOrder) {
 	var workOrderResponse WorkOrderResponse
 
 	url := fmt.Sprintf("http://%s/TrackitWebAPI/api/workorder/Create", TRACKIT_API_URL)
 
 	mutateData := MutateWorkOrder {
+		StatusName: statusName,
 		RequestorName: requestor,
 		CallbackNumber: callback,
 		Summary: summary,
@@ -349,6 +338,7 @@ func createWorkOrder(requestor string, callback string, summary string, priority
 	}
 
 	req.Header.Set("TrackItAPIKey", getAccessToken())
+	req.Header.Set("Content-Type", "text/json")
 
 	client := http.DefaultClient
 	resp, err := client.Do(req)
@@ -365,6 +355,7 @@ func createWorkOrder(requestor string, callback string, summary string, priority
 
 	if workOrderResponse.Success == "false" {
 		fmt.Println("Creation request was unsuccessful")
+		fmt.Println(req.GetBody())
 		fmt.Println(workOrderResponse)
 		return workOrderResponse.WorkOrder
 	}
@@ -434,7 +425,7 @@ func generateWorkOrder(w http.ResponseWriter, r *http.Request) {
 
 		var workOrder WorkOrder
 		
-		workOrder = createWorkOrder(payloadData.RequestorName, payloadData.CallbackNumber, payloadData.Summary, payloadData.Priority, payloadData.Type, payloadData.Subtype)
+		workOrder = createWorkOrder(payloadData.StatusName, payloadData.RequestorName, payloadData.CallbackNumber, payloadData.Summary, payloadData.Priority, payloadData.Type, payloadData.Subtype)
 		
 		fmt.Println(workOrder)
 
