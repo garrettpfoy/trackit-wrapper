@@ -14,4 +14,4 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     env_file:
       - .env
-    command: --interval 30
+    command: [ "--interval", "30", "trackit-wrapper"]
