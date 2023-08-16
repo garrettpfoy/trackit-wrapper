@@ -1,9 +1,7 @@
 FROM golang:1.17.6-bullseye
 
 ARG DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
-
 ARG DEBIAN_VERSION=11
-
 ARG FUNCTIONS_CUSTOMHANDLER_PORT=3005
 
 RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.asc.gpg \
