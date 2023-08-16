@@ -351,16 +351,16 @@ func createWorkOrder(statusName string, requestor string, callback string, summa
 
 	var jsonObject map[string]interface{}
 
-	err := json.Unmarshal(jsonData, &jsonObject)
+	err = json.Unmarshal(resp.Body, &jsonObject)
 	if err != nil {
 		fmt.Println("Failed to unmarshal JSON from Track-IT: ", err)
-		return workOrder
+		return workOrderResponse.WorkOrder
 	}
 
 	status, exists := jsonObject["Status"]
 	if !exists {
 		fmt.Println("Track-IT! did not return a status!")
-		return workOrder
+		return workOrderResponse.WorkOrder
 	}
 
 	if status == "false" {
