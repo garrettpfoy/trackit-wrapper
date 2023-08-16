@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"strconv"
 	"time"
+	"io"
 )
 
 // Global variables to be imported before script runtime
