@@ -349,6 +349,8 @@ func createWorkOrder(statusName string, requestor string, callback string, summa
 		return workOrderResponse.WorkOrder
 	}
 
+	fmt.Printf("Recieved response from Track-IT! --> %s", resp.Body)
+
 	err = json.NewDecoder(resp.Body).Decode(&workOrderResponse)
 	if err != nil {
 		fmt.Println("Reading the JSON response from Track-IT failed with error: ", err)
