@@ -137,7 +137,7 @@ type CreateWorkOrderPayload struct {
 	Requestor   string `json:"requestor"`
 	Callback    string `json:"callback"`
 	Summary     string `json:"summary"`
-	Priority    string `json:"priority"`
+	Priority    int `json:"priority"`
 	OrderType   string `json:"orderType"`
 	SubOrderType string `json:"subOrderType"`
 }
@@ -435,7 +435,7 @@ func generateWorkOrder(w http.ResponseWriter, r *http.Request) {
 		
 		workOrder = createWorkOrder(payloadData.Requestor, payloadData.Callback, payloadData.Summary, payloadData.Priority, payloadData.OrderType, payloadData.SubOrderType)
 		
-		if workOrder.ID == "" || workOrder.ID == 0 {
+		if workOrder.ID == "" {
 			http.Error(w, "Failed to create workOrder in Track-IT!", http.StatusInternalServerError)
 			return
 		}
