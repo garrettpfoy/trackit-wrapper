@@ -424,7 +424,7 @@ func generateWorkOrder(w http.ResponseWriter, r *http.Request) {
 	if authenticate(r) {
 		//Request is authenticated
 		//attempt to create work order!
-		var payloadData CreateWorkOrderPayload
+		var payloadData MutateWorkOrder
 		
 		err := json.NewDecoder(r.Body).Decode(&payloadData)
 		if err != nil {
@@ -434,7 +434,7 @@ func generateWorkOrder(w http.ResponseWriter, r *http.Request) {
 
 		var workOrder WorkOrder
 		
-		workOrder = createWorkOrder(payloadData.Requestor, payloadData.Callback, payloadData.Summary, payloadData.Priority, payloadData.OrderType, payloadData.SubOrderType)
+		workOrder = createWorkOrder(payloadData.RequestorName, payloadData.CallbackNumber, payloadData.Summary, payloadData.Priority, payloadData.Type, payloadData.Subtype)
 		
 		fmt.Println(workOrder)
 
