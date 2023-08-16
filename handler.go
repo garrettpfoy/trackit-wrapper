@@ -331,11 +331,15 @@ func createWorkOrder(statusName string, requestor string, callback string, summa
 		return workOrderResponse.WorkOrder
 	}
 
+	fmt.Printf("JSON Payload Body is: %s", jsonMutateData)
+
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonMutateData))
 	if err != nil {
 		fmt.Println("Failed to create work order post request: ", err)
 		return workOrderResponse.WorkOrder
 	}
+
+	fmt.Printf("JSON Req is: %s", req)
 
 	req.Header.Set("TrackItAPIKey", getAccessToken())
 	req.Header.Set("Content-Type", "text/json")
@@ -353,10 +357,10 @@ func createWorkOrder(statusName string, requestor string, callback string, summa
 		return workOrderResponse.WorkOrder
 	}
 
+	fmt.Printf("Recieved response: %s", workOrderResponse)
+
 	if workOrderResponse.Success == "false" {
 		fmt.Println("Creation request was unsuccessful")
-		fmt.Println(req.GetBody())
-		fmt.Println(workOrderResponse)
 		return workOrderResponse.WorkOrder
 	}
 
@@ -456,9 +460,6 @@ func generateWorkOrder(w http.ResponseWriter, r *http.Request) {
 
 
 func main() {
-	fmt.Println("Looking for environment variable to use for custom port...")
-	fmt.Printf("Found port: %s", HOST_PORT)
-
 	listenAddr := HOST_PORT
 
 	server := &http.Server {
