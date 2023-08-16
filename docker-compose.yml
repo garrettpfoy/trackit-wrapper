@@ -8,7 +8,7 @@ services:
       - .env
     restart: unless-stopped
     ports:
-      - 3006:3006
+      - 3006:3006 #Needs to match env var HOST_PORT
   watchtower:
     container_name: trackit-watchtower
     image: 'containrrr/watchtower'

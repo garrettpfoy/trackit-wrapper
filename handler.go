@@ -17,6 +17,7 @@ import (
 var (
 	WHITELISTED_IP    = os.Getenv("WHITELISTED_IP")
 	AUTHORIZATION_KEY = os.Getenv("AUTHORIZATION_KEY")
+	HOST_PORT = os.Getenv("HOST_PORT")
 
 	TRACKIT_API_URL = os.Getenv("TRACKIT_API_URL")
 	TRACKIT_USERNAME = os.Getenv("TRACKIT_USERNAME")
@@ -407,7 +408,10 @@ func returnWorkOrder(w http.ResponseWriter, r *http.Request) {
 
 
 func main() {
-	listenAddr := ":3006"
+	fmt.Println("Looking for environment variable to use for custom port...")
+	fmt.Printf("Found port: %s", HOST_PORT)
+
+	listenAddr := HOST_PORT
 
 	server := &http.Server {
 		Addr: listenAddr,
