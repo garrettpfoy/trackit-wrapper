@@ -435,6 +435,8 @@ func generateWorkOrder(w http.ResponseWriter, r *http.Request) {
 		
 		workOrder = createWorkOrder(payloadData.Requestor, payloadData.Callback, payloadData.Summary, payloadData.Priority, payloadData.OrderType, payloadData.SubOrderType)
 		
+		fmt.Println(workOrder)
+
 		if workOrder.ID == "" {
 			http.Error(w, "Failed to create workOrder in Track-IT!", http.StatusInternalServerError)
 			return
