@@ -365,6 +365,7 @@ func createWorkOrder(requestor string, callback string, summary string, priority
 
 	if workOrderResponse.Success == "false" {
 		fmt.Println("Creation request was unsuccessful")
+		fmt.Println(workOrderResponse)
 		return workOrderResponse.WorkOrder
 	}
 
