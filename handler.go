@@ -339,8 +339,6 @@ func createWorkOrder(statusName string, requestor string, callback string, summa
 		return workOrderResponse.WorkOrder
 	}
 
-	fmt.Printf("JSON Req is: %s", req)
-
 	req.Header.Set("TrackItAPIKey", getAccessToken())
 	req.Header.Set("Content-Type", "text/json")
 
