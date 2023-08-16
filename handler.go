@@ -151,6 +151,7 @@ func authenticate(request *http.Request) bool {
 	// Check if the IP is whitelisted
 	if WHITELISTED_IP != ip {
 		log.Printf("IP address %s is not whitelisted", ip)
+		log.Printf("Expected IP Address is %s", WHITELISTED_IP)
 		return false
 	}
 
