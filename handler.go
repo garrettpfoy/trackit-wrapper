@@ -27,7 +27,7 @@ var (
 // Struct used to format the body for a CREATE/POST
 // endpoint in TrackIT's API
 type MutateWorkOrder struct {
-	StatusName: string `json:"StatusName"`
+	StatusName string `json:"StatusName"`
 	RequestorName string `json:"RequestorName"`
 	CallbackNumber string `json:"RequestorPhoneNumber"`
 	Summary string `json:"Summary"`
