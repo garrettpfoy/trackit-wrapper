@@ -349,17 +349,21 @@ func createWorkOrder(statusName string, requestor string, callback string, summa
 		return workOrderResponse.WorkOrder
 	}
 
-	fmt.Printf("Recieved response from Track-IT! --> %s", resp.Body)
+	var jsonObject map[string]interface{}
 
-	err = json.NewDecoder(resp.Body).Decode(&workOrderResponse)
+	err := json.Unmarshal(jsonData, &jsonObject)
 	if err != nil {
-		fmt.Println("Reading the JSON response from Track-IT failed with error: ", err)
-		return workOrderResponse.WorkOrder
+		fmt.Println("Failed to unmarshal JSON from Track-IT: ", err)
+		return workOrder
 	}
 
-	fmt.Printf("Recieved response: %s", workOrderResponse)
+	status, exists := jsonObject["Status"]
+	if !exists {
+		fmt.Println("Track-IT! did not return a status!")
+		return workOrder
+	}
 
-	if workOrderResponse.Success == "false" {
+	if status == "false" {
 		fmt.Println("Creation request was unsuccessful")
 		return workOrderResponse.WorkOrder
 	}
