@@ -15,13 +15,13 @@ import (
 
 // Global variables to be imported before script runtime
 var (
-	WHITELISTED_IP    = os.Getenv("WHITELISTED_IP")
-	AUTHORIZATION_KEY = os.Getenv("AUTHORIZATION_KEY")
-	HOST_PORT = os.Getenv("HOST_PORT")
+	WHITELISTED_IP    = os.Getenv("WHITELISTED_IP") //IP that is expected of all incoming requests
+	AUTHORIZATION_KEY = os.Getenv("AUTHORIZATION_KEY") //Authorization header expected of all incoming requests
+	HOST_PORT = os.Getenv("HOST_PORT") //What port should the functions be hosted on? INTERNAL TO DOCKER, change the published port in docker run or compose
 
-	TRACKIT_API_URL = os.Getenv("TRACKIT_API_URL")
-	TRACKIT_USERNAME = os.Getenv("TRACKIT_USERNAME")
-	TRACKIT_PASSWORD = os.Getenv("TRACKIT_PASSWORD")
+	TRACKIT_API_URL = os.Getenv("TRACKIT_API_URL") //What is the IP/hostname of the Web Services API e.g. http://localhost/WebServicesAPI/... would be "localhost"
+	TRACKIT_USERNAME = os.Getenv("TRACKIT_USERNAME") //What is the technician username we should use to request an access token for?
+	TRACKIT_PASSWORD = os.Getenv("TRACKIT_PASSWORD") //What is the technician password we should use to request an access token for?
 )
 
 // Struct used to format the body for a CREATE/POST
@@ -129,6 +129,19 @@ type WorkOrderResponse struct {
     WorkOrder    WorkOrder   `json:"data"`
 }
 
+//
+// Struct to hold the expected CreateWorkOrder payload
+// used to request a new work order to be created
+//
+type CreateWorkOrderPayload struct {
+	Requestor   string `json:"requestor"`
+	Callback    string `json:"callback"`
+	Summary     string `json:"summary"`
+	Priority    string `json:"priority"`
+	OrderType   string `json:"orderType"`
+	SubOrderType string `json:"subOrderType"`
+}
+
 // 
 // Struct to unmarshal the JSON response from the
 // TrackIT API access token request
@@ -214,7 +227,8 @@ func getTokenFromRequest(request *http.Request) string {
 	return token
 }
 
-
+// Helper function to retrieve a given parameter from a request
+// returns the associated parameter
 func getQueryParameter(request *http.Request, parameter string) string {
 	// Get the query parameter from the request
 	queryParameter := request.URL.Query().Get(parameter)
@@ -405,6 +419,46 @@ func returnWorkOrder(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func generateWorkOrder(w http.ResponseWriter, r *http.Request) {
+	if authenticate(r) {
+		//Request is authenticated
+		//attempt to create work order!
+		var payloadData CreateWorkOrderPayload
+		
+		err := json.NewDecoder(r.Body).Decode(&payloadData)
+		if err != nil {
+			http.Error(w, "Failed to parse workOrder request payload", http.StatusBadRequest)
+			return
+		}
+
+		var workOrder WorkOrder
+		
+		workOrder = createWorkOrder(payloadData.Requestor, payloadData.Callback, payloadData.Summary, payloadData.Priority, payloadData.OrderType, payloadData.SubOrderType)
+		
+		if workOrder.ID == "" || workOrder.ID == 0 {
+			http.Error(w, "Failed to create workOrder in Track-IT!", http.StatusInternalServerError)
+			return
+		}
+		
+		w.Header().Set("Content-Type", "application/json")
+
+		jsonResponse, err := json.Marshal(workOrder)
+		if err != nil {
+			http.Error(w, "Failed to return workOrder in response payload", http.StatusInternalServerError)
+			return
+		}
+
+		_, err = w.Write(jsonResponse)
+		if err != nil {
+			http.Error(w, "Failed to write workOrder response to payload JSON", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+}
+
 
 
 func main() {
@@ -420,6 +474,7 @@ func main() {
 
 	http.HandleFunc("/api/bouncer", authTester)
 	http.HandleFunc("/api/getWorkOrder", returnWorkOrder)
+	http.HandleFunc("/api/createWorkOrder", generateWorkOrder)
 	
 	log.Printf("About to listen on %s. Go to https://localhost%s/", listenAddr, listenAddr)
 	log.Fatal(server.ListenAndServe())
