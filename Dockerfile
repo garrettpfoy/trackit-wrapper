@@ -36,4 +36,4 @@ COPY . .
 
 RUN go build handler.go
 
-CMD ["func", "start", "--port", "3005"]
+CMD ["func", "start", "--port", "3005", "--custom"]
