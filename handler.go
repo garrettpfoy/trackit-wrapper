@@ -351,7 +351,13 @@ func createWorkOrder(statusName string, requestor string, callback string, summa
 
 	var jsonObject map[string]interface{}
 
-	err = json.Unmarshal(resp.Body, &jsonObject)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error casting response JSON to []byte")
+		return workOrderResponse.WorkOrder
+	}
+
+	err = json.Unmarshal(body, &jsonObject)
 	if err != nil {
 		fmt.Println("Failed to unmarshal JSON from Track-IT: ", err)
 		return workOrderResponse.WorkOrder
